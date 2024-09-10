@@ -1,6 +1,6 @@
 
 CC = g++
-CPPFLAGS = -g -I./ -INoiseGenerators/
+CPPFLAGS = -g -I./ -INoiseGenerators/ -std=c++20
 LINKER_FLAGS = -lSDL2 -lGL -lX11 -ldl -lpthread -lrt
 SRCS=$(subst main.cpp,,$(wildcard *.cpp)) $(wildcard NoiseGenerators/*.cpp)
 OBJS=$(SRCS:.cpp=.o )
@@ -13,7 +13,7 @@ run : all
 
 clean :
 	rm main -f
-	rm *.o -f
+	find . -name "*.o" -type f -delete
 
 main.o : main.cpp
 	@:

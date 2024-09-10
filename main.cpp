@@ -10,9 +10,8 @@ SDL_Window *window = NULL;
 SDL_Surface *window_surf = NULL;
 const int WIDTH = 640;
 const int HEIGHT = 480;
-int main(int argc, char *args[])
-{
 
+void initialize() {
     // Initialize SDL systems
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
@@ -36,11 +35,15 @@ int main(int argc, char *args[])
     }
 
     NoiseGenerator* noise = new RandomNoise();
-    set_generator(noise);
+    render_init(noise);
+}
 
-    render_screen(0, 0, WIDTH, HEIGHT, window_surf);
+int main(int argc, char *args[])
+{
+    int viewport_top = 0;
+    int viewport_left = 0;
 
-    SDL_UpdateWindowSurface(window);
+    initialize();
 
     // Poll for events and wait till user closes window
     bool quit = false;
@@ -49,11 +52,26 @@ int main(int argc, char *args[])
     {
         while (SDL_PollEvent(&currentEvent) != 0)
         {
-            if (currentEvent.type == SDL_QUIT)
+            switch (currentEvent.type)
             {
-                quit = true;
+                case SDL_QUIT:
+                    quit = true;
+                    break;
+                case SDL_KEYDOWN:
+                    switch (currentEvent.key.keysym.sym) {
+                        case SDLK_RIGHT:
+                            viewport_left += 1;
+                            break;
+                    }
             }
         }
+
+        render_screen(viewport_left, viewport_top, WIDTH, HEIGHT, window_surf);
+        SDL_UpdateWindowSurface(window);
+
+        SDL_Delay(10);
+
+        printf("frame\n");
     }
 
     // Free up window
