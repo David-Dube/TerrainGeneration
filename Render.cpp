@@ -4,6 +4,7 @@
 #include <utility>
 #include <string>
 #include <vector>
+#include <cmath>
 
 #define CACHE_SIZE 5000
 
@@ -80,7 +81,7 @@ void render_screen(int left, int top, int width, int height, double scale, SDL_S
         for (int y = true_top; y < top + height; y += 32)
         {
             SDL_Surface *chunk = get_chunk_surface(x, y);
-            SDL_Rect dst_rect = {(int) ((x - left) * scale), (int) ((y - top) * scale), (int) (32 * scale), (int) (32 * scale)};
+            SDL_Rect dst_rect = {round((x - left) * scale), round((y - top) * scale), round(32 * scale), round(32 * scale)};
             SDL_BlitScaled(chunk, NULL, target, &dst_rect);
         }
     }

@@ -79,15 +79,16 @@ int main(int argc, char *args[])
         if (keys[SDL_SCANCODE_UP]) viewport_top -= settings.pan_speed / viewport_scale;
         if (keys[SDL_SCANCODE_DOWN]) viewport_top += settings.pan_speed / viewport_scale;
 
-        if (keys[SDL_SCANCODE_RIGHTBRACKET]) viewport_scale *= 1.005;
-        if (keys[SDL_SCANCODE_LEFTBRACKET]) viewport_scale /= 1.005;
+        if (keys[SDL_SCANCODE_RIGHTBRACKET]) viewport_scale += 1/1024.0;
+        if (keys[SDL_SCANCODE_LEFTBRACKET]) viewport_scale -= 1/1024.0;
+
+        printf("%f\n", viewport_scale);
 
         SDL_FillRect(window_surf, NULL, 0x0);
         render_screen(viewport_left, viewport_top, WIDTH / viewport_scale, HEIGHT / viewport_scale, viewport_scale, window_surf);
         SDL_UpdateWindowSurface(window);
 
         Uint32 dt = SDL_GetTicks() - start_timestamp;
-        printf("dt: %d\n", dt);
         if (dt < 16) SDL_Delay((Uint32) 16 - dt);
     }
 
