@@ -4,8 +4,8 @@
 #include "Noise.h"
 #include <algorithm>
 
-void set_generator(NoiseGenerator* generator);
+void render_init(NoiseGenerator* generator);
 
 SDL_Surface* get_chunk_surface(int left, int top);
 
-void render_screen(int left, int top, int width, int height, SDL_Surface* target);
+void render_screen(int left, int top, int width, int height, double scale, SDL_Surface* target);

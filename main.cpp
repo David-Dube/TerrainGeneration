@@ -8,8 +8,13 @@
 
 SDL_Window *window = NULL;
 SDL_Surface *window_surf = NULL;
+const Uint8* keys;
 const int WIDTH = 640;
 const int HEIGHT = 480;
+
+struct {
+    double pan_speed = 20;
+} settings;
 
 void initialize() {
     // Initialize SDL systems
@@ -34,22 +39,28 @@ void initialize() {
         }
     }
 
-    NoiseGenerator* noise = new RandomNoise();
+    keys = SDL_GetKeyboardState(NULL);
+
+    NoiseGenerator* noise = new CircleNoise();
     render_init(noise);
 }
 
 int main(int argc, char *args[])
 {
-    int viewport_top = 0;
-    int viewport_left = 0;
+    double viewport_top = 0;
+    double viewport_left = 0;
+    double viewport_scale = 1;
 
     initialize();
 
     // Poll for events and wait till user closes window
     bool quit = false;
     SDL_Event currentEvent;
+    Uint64 start_timestamp;
     while (!quit)
     {
+        start_timestamp = SDL_GetTicks64();
+        SDL_PumpEvents();
         while (SDL_PollEvent(&currentEvent) != 0)
         {
             switch (currentEvent.type)
@@ -59,19 +70,25 @@ int main(int argc, char *args[])
                     break;
                 case SDL_KEYDOWN:
                     switch (currentEvent.key.keysym.sym) {
-                        case SDLK_RIGHT:
-                            viewport_left += 1;
-                            break;
                     }
             }
         }
 
-        render_screen(viewport_left, viewport_top, WIDTH, HEIGHT, window_surf);
+        if (keys[SDL_SCANCODE_RIGHT]) viewport_left += settings.pan_speed / viewport_scale;
+        if (keys[SDL_SCANCODE_LEFT]) viewport_left -= settings.pan_speed / viewport_scale;
+        if (keys[SDL_SCANCODE_UP]) viewport_top -= settings.pan_speed / viewport_scale;
+        if (keys[SDL_SCANCODE_DOWN]) viewport_top += settings.pan_speed / viewport_scale;
+
+        if (keys[SDL_SCANCODE_RIGHTBRACKET]) viewport_scale *= 1.005;
+        if (keys[SDL_SCANCODE_LEFTBRACKET]) viewport_scale /= 1.005;
+
+        SDL_FillRect(window_surf, NULL, 0x0);
+        render_screen(viewport_left, viewport_top, WIDTH / viewport_scale, HEIGHT / viewport_scale, viewport_scale, window_surf);
         SDL_UpdateWindowSurface(window);
 
-        SDL_Delay(10);
-
-        printf("frame\n");
+        Uint32 dt = SDL_GetTicks() - start_timestamp;
+        printf("dt: %d\n", dt);
+        if (dt < 16) SDL_Delay((Uint32) 16 - dt);
     }
 
     // Free up window
