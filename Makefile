@@ -1,7 +1,7 @@
 
 CC = g++
 CPPFLAGS = -g -I./ -INoiseGenerators/ -std=c++20
-LINKER_FLAGS = -lSDL2 -lGL -lX11 -ldl -lpthread -lrt
+LINKER_FLAGS = -lSDL2 -lGL -lX11 -ldl -lpthread -lrt -lSDL2_ttf
 SRCS=$(subst main.cpp,,$(wildcard *.cpp)) $(wildcard NoiseGenerators/*.cpp)
 OBJS=$(SRCS:.cpp=.o )
 
@@ -19,4 +19,4 @@ main.o : main.cpp
 	@:
 
 %.o : %.cpp
-	$(CC) -c $(CPPFLAGS) $< -o $@
+	$(CC) -c $(CPPFLAGS) $< -o $@ $(LINKER_FLAGS)

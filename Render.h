@@ -4,6 +4,8 @@
 #include "Noise.h"
 #include <algorithm>
 
+extern double display_fps;
+
 void render_init(NoiseGenerator* generator);
 
 SDL_Surface* get_chunk_surface(int left, int top);

@@ -6,7 +6,11 @@
 #include <vector>
 #include <cmath>
 
-#define CACHE_SIZE 5000
+#include <SDL2/SDL_ttf.h>
+
+#define CACHE_SIZE 10000
+
+double display_fps = 0;
 
 struct Tile
 {
@@ -24,11 +28,15 @@ std::unordered_map<std::string, int> tile_map;
 
 NoiseGenerator *generator;
 
+TTF_Font *font;
+
+int allocations = 0;
+
 void render_init(NoiseGenerator *g)
 {
-    printf("tile: %d\n", sizeof(Tile));
     memset(tile_cache, 0, sizeof(Tile) * CACHE_SIZE);
     generator = g;
+    font = TTF_OpenFont("font.ttf", 12);
 }
 
 /**
@@ -57,6 +65,7 @@ SDL_Surface *get_chunk_surface(int left, int top)
     tile_map.erase(cache_key(tile_cache[current_index].x, tile_cache[current_index].y));
     tile_cache[current_index] = Tile{left, top, surf};
     tile_map.emplace(cache_key(left, top), current_index);
+    ++allocations;
 
     return surf;
 }
@@ -68,12 +77,21 @@ int roundUp(int numToRound, int multiple)
     return (numToRound + multiple - 1) & -multiple;
 }
 
+std::string get_debug_text() {
+    std::string result;
+    result += "Cache size: " + std::to_string(tile_map.size()) + '\n';
+    result += "Allocations: " + std::to_string(allocations) + '\n';
+    result += "FPS: " + std::to_string((int) display_fps) + '\n';
+
+    return result;
+}
 
 /**
  * Renders a portion of a heightmap (left, top, left+width, top+height) to the surface at (0,0)
  */
 void render_screen(int left, int top, int width, int height, double scale, SDL_Surface *target)
 {
+    allocations = 0;
     int true_left = roundUp(left, 32) - 32;
     int true_top = roundUp(top, 32) - 32;
     for (int x = true_left; x < left + width; x += 32)
@@ -81,8 +99,12 @@ void render_screen(int left, int top, int width, int height, double scale, SDL_S
         for (int y = true_top; y < top + height; y += 32)
         {
             SDL_Surface *chunk = get_chunk_surface(x, y);
-            SDL_Rect dst_rect = {round((x - left) * scale), round((y - top) * scale), round(32 * scale), round(32 * scale)};
+            SDL_Rect dst_rect = {(int) round((x - left) * scale), (int) round((y - top) * scale), (int) round(32 * scale), (int) round(32 * scale)};
             SDL_BlitScaled(chunk, NULL, target, &dst_rect);
         }
     }
+
+    SDL_Surface *text_surface = TTF_RenderText_Solid_Wrapped(font, get_debug_text().c_str(), {0, 255, 0}, width);
+    SDL_Rect rect = {0, 0, text_surface->w, text_surface->h};
+    SDL_BlitSurface(text_surface, NULL, target, &rect);
 }
