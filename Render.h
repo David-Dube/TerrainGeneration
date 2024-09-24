@@ -10,4 +10,6 @@ void render_init(NoiseGenerator* generator);
 
 SDL_Surface* get_chunk_surface(int left, int top);
 
+void drop_cache();
+
 void render_screen(int left, int top, int width, int height, double scale, SDL_Surface* target);

@@ -2,10 +2,11 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #include <SDL2/SDL_ttf.h>
+
 #include "Render.h"
-#include "Sine.h"
-#include "Perlin.h"
+#include "TerrainNoise.h"
 #include "MiscNoise.h"
+#include "ColorMap.h"
 
 SDL_Window *window = NULL;
 SDL_Surface *window_surf = NULL;
@@ -16,6 +17,7 @@ const int HEIGHT = 480;
 struct {
     double pan_speed = 20;
 } settings;
+NoiseGenerator *noise;
 
 void initialize() {
     // Initialize SDL systems
@@ -27,7 +29,7 @@ void initialize() {
     else
     {
         // Create a window
-        window = SDL_CreateWindow("BGFX Tutorial",
+        window = SDL_CreateWindow("Terrain Generation",
                                   SDL_WINDOWPOS_UNDEFINED,
                                   SDL_WINDOWPOS_UNDEFINED,
                                   WIDTH, HEIGHT,
@@ -44,7 +46,7 @@ void initialize() {
 
     keys = SDL_GetKeyboardState(NULL);
 
-    NoiseGenerator* noise = new PerlinNoise();
+    noise = new TerrainNoise();
     render_init(noise);
 }
 
@@ -72,8 +74,8 @@ int main(int argc, char *args[])
                     quit = true;
                     break;
                 case SDL_KEYDOWN:
-                    switch (currentEvent.key.keysym.sym) {
-                    }
+                    noise->handle_key(currentEvent.key);
+                    if (currentEvent.key.keysym.scancode == SDL_SCANCODE_EQUALS) drop_cache();
             }
         }
 
@@ -82,8 +84,10 @@ int main(int argc, char *args[])
         if (keys[SDL_SCANCODE_UP]) viewport_top -= settings.pan_speed / viewport_scale;
         if (keys[SDL_SCANCODE_DOWN]) viewport_top += settings.pan_speed / viewport_scale;
 
-        if (keys[SDL_SCANCODE_RIGHTBRACKET]) viewport_scale += 1/256.0;
-        if (keys[SDL_SCANCODE_LEFTBRACKET]) viewport_scale -= 1/256.0;
+        if (keys[SDL_SCANCODE_RIGHTBRACKET]) viewport_scale *= 1.01;
+        if (keys[SDL_SCANCODE_LEFTBRACKET]) viewport_scale *= 0.99;
+
+        if (keys[SDL_SCANCODE_BACKSLASH]) viewport_scale = 1;
 
         SDL_FillRect(window_surf, NULL, 0x0);
         render_screen(viewport_left, viewport_top, WIDTH / viewport_scale, HEIGHT / viewport_scale, viewport_scale, window_surf);
