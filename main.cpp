@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 
 #include "Render.h"
 #include "TerrainNoise.h"
@@ -43,6 +44,7 @@ void initialize() {
     }
 
     TTF_Init();
+    IMG_Init(0);
 
     keys = SDL_GetKeyboardState(NULL);
 
@@ -76,6 +78,9 @@ int main(int argc, char *args[])
                 case SDL_KEYDOWN:
                     noise->handle_key(currentEvent.key);
                     if (currentEvent.key.keysym.scancode == SDL_SCANCODE_EQUALS) drop_cache();
+                    if (currentEvent.key.keysym.scancode == SDL_SCANCODE_S) export_range(viewport_left, viewport_top, WIDTH / viewport_scale, HEIGHT / viewport_scale, viewport_scale);
+                    break;
+
             }
         }
 

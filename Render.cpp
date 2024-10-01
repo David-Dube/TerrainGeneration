@@ -5,6 +5,7 @@
 #include <cmath>
 
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 
 #include "ColorMap.h"
 #include "Render.h"
@@ -53,7 +54,7 @@ void render_init(NoiseGenerator *g)
 /**
  * Returns a surface with a 32x32 pixel heightmap at left, top
  */
-SDL_Surface *get_chunk_surface(int left, int top)
+SDL_Surface *get_chunk_surface(int left, int top, std::vector<ColorStop> stops)
 {
     if (tile_map.contains(cache_key(left, top)))
     {
@@ -81,6 +82,10 @@ SDL_Surface *get_chunk_surface(int left, int top)
     ++allocations;
  
     return surf;
+}
+
+SDL_Surface *get_chunk_surface(int left, int top) {
+    return get_chunk_surface(left, top, color_stops);
 }
 
 void drop_cache() {
@@ -111,7 +116,7 @@ std::string get_debug_text() {
 /**
  * Renders a portion of a heightmap (left, top, left+width, top+height) to the surface at (0,0)
  */
-void render_screen(int left, int top, int width, int height, double scale, SDL_Surface *target)
+void render_screen(int left, int top, int width, int height, double scale, SDL_Surface *target, bool debug)
 {
     allocations = 0;
     int true_left = roundUp(left, 32) - 32;
@@ -126,7 +131,27 @@ void render_screen(int left, int top, int width, int height, double scale, SDL_S
         }
     }
 
-    SDL_Surface *text_surface = TTF_RenderText_Solid_Wrapped(font, get_debug_text().c_str(), {0, 255, 0}, width);
-    SDL_Rect rect = {0, 0, text_surface->w, text_surface->h};
-    SDL_BlitSurface(text_surface, NULL, target, &rect);
+    if (debug) {
+        SDL_Surface *text_surface = TTF_RenderText_Solid_Wrapped(font, get_debug_text().c_str(), {0, 255, 0}, width);
+        SDL_Rect rect = {0, 0, text_surface->w, text_surface->h};
+        SDL_BlitSurface(text_surface, NULL, target, &rect);
+    }
+}
+
+void export_range(int left, int top, int width, int height, double scale) {
+    SDL_Surface *surf = SDL_CreateRGBSurface(0, width, height, 32, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x00000000);
+    if (surf == NULL) printf("SDL error: %s\n", SDL_GetError());
+    render_screen(left, top, width, height, scale, surf, false);
+    IMG_SavePNG(surf, std::string("texture.png").c_str());
+
+    drop_cache();
+    std::vector<ColorStop> temp_stops = color_stops;
+    color_stops.clear();
+    color_stops.push_back(ColorStop{0, {0, 0, 0}});
+    color_stops.push_back(ColorStop{1, {255, 255, 255}});
+    render_screen(left, top, width, height, scale, surf, false);
+    IMG_SavePNG(surf, std::string("heightmap.png").c_str());
+    drop_cache();
+
+    color_stops = temp_stops;
 }
