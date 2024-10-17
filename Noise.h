@@ -4,6 +4,7 @@
 class NoiseGenerator {
 public:
     NoiseGenerator() {}
+    ~NoiseGenerator() {}
 
     virtual double get_height(double x, double y) = 0;
 

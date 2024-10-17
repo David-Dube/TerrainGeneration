@@ -1,8 +1,8 @@
 
 CC = g++
-CPPFLAGS = -g -I./ -INoiseGenerators/ -std=c++20
+CPPFLAGS = -g -I./ -INoiseGenerators/ -INoiseGenerators/Biomes/ -std=c++20
 LINKER_FLAGS = -lSDL2 -lGL -lX11 -ldl -lpthread -lrt -lSDL2_ttf -lSDL2_image
-SRCS=$(subst main.cpp,,$(wildcard *.cpp)) $(wildcard NoiseGenerators/*.cpp)
+SRCS=$(subst main.cpp,,$(wildcard *.cpp)) $(wildcard NoiseGenerators/*.cpp) $(wildcard NoiseGenerators/Biomes/*.cpp)
 OBJS=$(SRCS:.cpp=.o )
 
 all : main.cpp $(OBJS)

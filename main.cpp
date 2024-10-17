@@ -8,6 +8,9 @@
 #include "TerrainNoise.h"
 #include "MiscNoise.h"
 #include "ColorMap.h"
+#include "Lake.h"
+#include "Grasslands.h"
+#include "Mountain.h"
 
 SDL_Window *window = NULL;
 SDL_Surface *window_surf = NULL;
@@ -77,8 +80,10 @@ int main(int argc, char *args[])
                     break;
                 case SDL_KEYDOWN:
                     noise->handle_key(currentEvent.key);
-                    if (currentEvent.key.keysym.scancode == SDL_SCANCODE_EQUALS) drop_cache();
                     if (currentEvent.key.keysym.scancode == SDL_SCANCODE_S) export_range(viewport_left, viewport_top, WIDTH / viewport_scale, HEIGHT / viewport_scale, viewport_scale);
+                    if (!(currentEvent.key.keysym.scancode == SDL_SCANCODE_LEFT || currentEvent.key.keysym.scancode == SDL_SCANCODE_RIGHT || currentEvent.key.keysym.scancode == SDL_SCANCODE_UP || currentEvent.key.keysym.scancode == SDL_SCANCODE_DOWN || currentEvent.key.keysym.scancode == SDL_SCANCODE_LEFTBRACKET || currentEvent.key.keysym.scancode == SDL_SCANCODE_RIGHTBRACKET)) {
+                        drop_cache();
+                    }
                     break;
 
             }

@@ -41,6 +41,7 @@ void render_init(NoiseGenerator *g)
     memset(tile_cache, 0, sizeof(Tile) * CACHE_SIZE);
     generator = g;
     font = TTF_OpenFont("font.ttf", 12);
+    if (font == nullptr) printf("Failed to load font: %s\n", SDL_GetError());
 
     color_stops.push_back(ColorStop{0, {0, 0, 128}}); // dark blue, deep ocean
     color_stops.push_back(ColorStop{0.2, {0, 0, 255}}); // light blue, shallow ocean
@@ -49,6 +50,15 @@ void render_init(NoiseGenerator *g)
     color_stops.push_back(ColorStop{0.8, {0, 150, 0}}); // dark green, high grass
     color_stops.push_back(ColorStop{0.9, {128, 128, 128}}); // gray, mountain
     color_stops.push_back(ColorStop(1, {255, 255, 255})); // white, snow
+
+    // color_stops.push_back(ColorStop{0, {0, 0, 225}});
+    // color_stops.push_back(ColorStop{0.25, {0, 0, 225}});
+    // color_stops.push_back(ColorStop{00.25, {255, 255, 0}});
+    // color_stops.push_back(ColorStop{0.5, {255, 255, 0}});
+    // color_stops.push_back(ColorStop{0.5, {0, 255, 0}});
+    // color_stops.push_back(ColorStop{0.75, {0, 255, 0}});
+    // color_stops.push_back(ColorStop{0.75, {128, 128, 128}});
+    // color_stops.push_back(ColorStop{1, {128, 128, 128}});
 }
 
 /**
@@ -133,17 +143,20 @@ void render_screen(int left, int top, int width, int height, double scale, SDL_S
 
     if (debug) {
         SDL_Surface *text_surface = TTF_RenderText_Solid_Wrapped(font, get_debug_text().c_str(), {0, 255, 0}, width);
+        if (text_surface == nullptr) printf("SDL error: %s\n", SDL_GetError());
         SDL_Rect rect = {0, 0, text_surface->w, text_surface->h};
         SDL_BlitSurface(text_surface, NULL, target, &rect);
     }
 }
 
 void export_range(int left, int top, int width, int height, double scale) {
+    printf("Rendering texture\n");
     SDL_Surface *surf = SDL_CreateRGBSurface(0, width, height, 32, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x00000000);
     if (surf == NULL) printf("SDL error: %s\n", SDL_GetError());
     render_screen(left, top, width, height, scale, surf, false);
     IMG_SavePNG(surf, std::string("texture.png").c_str());
 
+    printf("Rendering heightmap\n");
     drop_cache();
     std::vector<ColorStop> temp_stops = color_stops;
     color_stops.clear();
@@ -154,4 +167,6 @@ void export_range(int left, int top, int width, int height, double scale) {
     drop_cache();
 
     color_stops = temp_stops;
+
+    printf("Done\n");
 }
