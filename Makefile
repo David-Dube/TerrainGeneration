@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 
 CC = g++
 CPPFLAGS = -g -I./ -INoiseGenerators/ -INoiseGenerators/Biomes/ -std=c++20
@@ -6,10 +7,13 @@ SRCS=$(subst main.cpp,,$(wildcard *.cpp)) $(wildcard NoiseGenerators/*.cpp) $(wi
 OBJS=$(SRCS:.cpp=.o )
 
 all : main.cpp $(OBJS)
-	$(CC) main.cpp -o main $(CPPFLAGS) $(LINKER_FLAGS) $(BGFX_HEADERS) $(OBJS)
+	$(CC) main.cpp -o main $(CPPFLAGS) $(LINKER_FLAGS) $(OBJS)
 
 run : all
 	./main
+
+benchmark : all
+	time ./main benchmark
 
 clean :
 	rm main -f

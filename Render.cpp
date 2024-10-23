@@ -20,7 +20,8 @@ struct Tile
     SDL_Surface *surf;
 };
 
-std::string cache_key(int x, int y) {
+std::string cache_key(int x, int y)
+{
     return std::to_string(x) + "," + std::to_string(y);
 }
 
@@ -41,15 +42,16 @@ void render_init(NoiseGenerator *g)
     memset(tile_cache, 0, sizeof(Tile) * CACHE_SIZE);
     generator = g;
     font = TTF_OpenFont("font.ttf", 12);
-    if (font == nullptr) printf("Failed to load font: %s\n", SDL_GetError());
+    if (font == nullptr)
+        printf("Failed to load font: %s\n", SDL_GetError());
 
-    color_stops.push_back(ColorStop{0, {0, 0, 128}}); // dark blue, deep ocean
-    color_stops.push_back(ColorStop{0.2, {0, 0, 255}}); // light blue, shallow ocean
-    color_stops.push_back(ColorStop{0.2, {235, 198, 52}}); // yellow, beach
-    color_stops.push_back(ColorStop{0.5, {0, 200, 0}}); // light green, low grass
-    color_stops.push_back(ColorStop{0.8, {0, 150, 0}}); // dark green, high grass
+    color_stops.push_back(ColorStop{0, {0, 0, 128}});       // dark blue, deep ocean
+    color_stops.push_back(ColorStop{0.2, {0, 0, 255}});     // light blue, shallow ocean
+    color_stops.push_back(ColorStop{0.2, {235, 198, 52}});  // yellow, beach
+    color_stops.push_back(ColorStop{0.5, {0, 200, 0}});     // light green, low grass
+    color_stops.push_back(ColorStop{0.8, {0, 150, 0}});     // dark green, high grass
     color_stops.push_back(ColorStop{0.9, {128, 128, 128}}); // gray, mountain
-    color_stops.push_back(ColorStop(1, {255, 255, 255})); // white, snow
+    color_stops.push_back(ColorStop(1, {255, 255, 255}));   // white, snow
 
     // color_stops.push_back(ColorStop{0, {0, 0, 225}});
     // color_stops.push_back(ColorStop{0.25, {0, 0, 225}});
@@ -76,8 +78,9 @@ SDL_Surface *get_chunk_surface(int left, int top, std::vector<ColorStop> stops)
     {
         for (int y = 0; y < 32; y++)
         {
-            uint8_t height = std::clamp(generator->get_height(left + x, top + y), 0.0, 255.0);
-            Color c = ramp_1d(height / 255.0, color_stops);
+            // uint8_t height = std::clamp(generator->get_height(left + x, top + y), 0.0, 255.0);
+            // Color c = ramp_1d(height / 255.0, color_stops);
+            Color c = generator->get_color(left + x, top + y);
             *((Uint32 *)((Uint8 *)surf->pixels + y * surf->pitch + x * surf->format->BytesPerPixel)) = pack_color(c);
 
             // if (x == 0 || x == 31 || y == 0 || y == 31) *((Uint32 *)((Uint8 *)surf->pixels + y * surf->pitch + x * surf->format->BytesPerPixel)) = 0x00FF0000;
@@ -90,16 +93,19 @@ SDL_Surface *get_chunk_surface(int left, int top, std::vector<ColorStop> stops)
     tile_cache[current_index] = Tile{left, top, surf};
     tile_map.emplace(cache_key(left, top), current_index);
     ++allocations;
- 
+
     return surf;
 }
 
-SDL_Surface *get_chunk_surface(int left, int top) {
+SDL_Surface *get_chunk_surface(int left, int top)
+{
     return get_chunk_surface(left, top, color_stops);
 }
 
-void drop_cache() {
-    for (int i = 0; i < CACHE_SIZE; i++) {
+void drop_cache()
+{
+    for (int i = 0; i < CACHE_SIZE; i++)
+    {
         SDL_FreeSurface(tile_cache[i].surf);
         tile_map.erase(cache_key(tile_cache[i].x, tile_cache[i].y));
         tile_cache[i] = {0, 0, nullptr};
@@ -109,16 +115,17 @@ void drop_cache() {
 
 // https://stackoverflow.com/questions/3407012/rounding-up-to-the-nearest-multiple-of-a-number
 // multiple must be a power of 2
-int roundUp(int numToRound, int multiple) 
+int roundUp(int numToRound, int multiple)
 {
     return (numToRound + multiple - 1) & -multiple;
 }
 
-std::string get_debug_text() {
+std::string get_debug_text()
+{
     std::string result;
     result += "Cache size: " + std::to_string(tile_map.size()) + '\n';
     result += "Allocations: " + std::to_string(allocations) + '\n';
-    result += "FPS: " + std::to_string((int) display_fps) + '\n';
+    result += "FPS: " + std::to_string((int)display_fps) + '\n';
 
     return result;
 }
@@ -136,23 +143,27 @@ void render_screen(int left, int top, int width, int height, double scale, SDL_S
         for (int y = true_top; y < top + height; y += 32)
         {
             SDL_Surface *chunk = get_chunk_surface(x, y);
-            SDL_Rect dst_rect = {(int) round((x - left) * scale), (int) round((y - top) * scale), (int) round(32 * scale), (int) round(32 * scale)};
+            SDL_Rect dst_rect = {(int)((x - left) * scale), (int)((y - top) * scale), (int)(32 * scale)+1, (int)(32 * scale)+1};
             SDL_BlitScaled(chunk, NULL, target, &dst_rect);
         }
     }
 
-    if (debug) {
+    if (debug)
+    {
         SDL_Surface *text_surface = TTF_RenderText_Solid_Wrapped(font, get_debug_text().c_str(), {0, 255, 0}, width);
-        if (text_surface == nullptr) printf("SDL error: %s\n", SDL_GetError());
+        if (text_surface == nullptr)
+            printf("SDL error: %s\n", SDL_GetError());
         SDL_Rect rect = {0, 0, text_surface->w, text_surface->h};
         SDL_BlitSurface(text_surface, NULL, target, &rect);
     }
 }
 
-void export_range(int left, int top, int width, int height, double scale) {
+void export_range(int left, int top, int width, int height, double scale)
+{
     printf("Rendering texture\n");
     SDL_Surface *surf = SDL_CreateRGBSurface(0, width, height, 32, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x00000000);
-    if (surf == NULL) printf("SDL error: %s\n", SDL_GetError());
+    if (surf == NULL)
+        printf("SDL error: %s\n", SDL_GetError());
     render_screen(left, top, width, height, scale, surf, false);
     IMG_SavePNG(surf, std::string("texture.png").c_str());
 

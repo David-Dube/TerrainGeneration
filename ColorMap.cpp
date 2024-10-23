@@ -31,7 +31,20 @@ Color ramp_1d(double x, std::vector<ColorStop> &stops)
     throw std::runtime_error("Something went wrong in ramp_1d(double, std::vector<ColorStop>)");
 }
 
+Color ramp_sigmoid(double x, Color p1, Color p2) {
+    double y = 1 / (1 + pow(2.71828182846, x));
+    return ramp_1d(y, p1, p2);
+}
+
 Uint32 pack_color(Color c)
 {
     return c.r << 24 | c.g << 16 | c.b << 8;
+}
+
+Color unpack_color(Uint32 c) {
+    return {
+        c >> 24 & 0xFF,
+        c >> 16 & 0xFF,
+        c >> 8 & 0xFF
+    };
 }

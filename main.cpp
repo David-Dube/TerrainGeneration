@@ -47,7 +47,7 @@ void initialize() {
     }
 
     TTF_Init();
-    IMG_Init(0);
+    IMG_Init(IMG_INIT_PNG);
 
     keys = SDL_GetKeyboardState(NULL);
 
@@ -62,6 +62,13 @@ int main(int argc, char *args[])
     double viewport_scale = 1;
 
     initialize();
+
+    if (argc > 1) {
+        if (std::string(args[1]) == "benchmark") {
+            render_screen(0, 0, 2500, 2500, 1, window_surf, false);
+            exit(0);
+        }
+    }
 
     // Poll for events and wait till user closes window
     bool quit = false;
@@ -81,7 +88,7 @@ int main(int argc, char *args[])
                 case SDL_KEYDOWN:
                     noise->handle_key(currentEvent.key);
                     if (currentEvent.key.keysym.scancode == SDL_SCANCODE_S) export_range(viewport_left, viewport_top, WIDTH / viewport_scale, HEIGHT / viewport_scale, viewport_scale);
-                    if (!(currentEvent.key.keysym.scancode == SDL_SCANCODE_LEFT || currentEvent.key.keysym.scancode == SDL_SCANCODE_RIGHT || currentEvent.key.keysym.scancode == SDL_SCANCODE_UP || currentEvent.key.keysym.scancode == SDL_SCANCODE_DOWN || currentEvent.key.keysym.scancode == SDL_SCANCODE_LEFTBRACKET || currentEvent.key.keysym.scancode == SDL_SCANCODE_RIGHTBRACKET)) {
+                    if (!(currentEvent.key.keysym.scancode == SDL_SCANCODE_LALT || currentEvent.key.keysym.scancode == SDL_SCANCODE_LEFT || currentEvent.key.keysym.scancode == SDL_SCANCODE_RIGHT || currentEvent.key.keysym.scancode == SDL_SCANCODE_UP || currentEvent.key.keysym.scancode == SDL_SCANCODE_DOWN || currentEvent.key.keysym.scancode == SDL_SCANCODE_LEFTBRACKET || currentEvent.key.keysym.scancode == SDL_SCANCODE_RIGHTBRACKET)) {
                         drop_cache();
                     }
                     break;
