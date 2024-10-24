@@ -10,7 +10,10 @@
 #include "ColorMap.h"
 #include "Render.h"
 
-#define CACHE_SIZE 10000
+#include <thread>
+#include <queue>
+
+#define CACHE_SIZE 50000
 
 double display_fps = 0;
 
@@ -25,9 +28,13 @@ std::string cache_key(int x, int y)
     return std::to_string(x) + "," + std::to_string(y);
 }
 
+std::mutex cache_mutex;
 int current_index = 0;
 Tile tile_cache[CACHE_SIZE];
 std::unordered_map<std::string, int> tile_map;
+std::unordered_map<std::string, bool> requested;
+
+SDL_Surface *ungenerated;
 
 NoiseGenerator *generator;
 
@@ -36,6 +43,17 @@ TTF_Font *font;
 int allocations = 0;
 
 std::vector<ColorStop> color_stops;
+
+std::vector<std::thread> threads;
+struct RenderRequest {
+    int x, y;
+};
+
+bool stopping = false;
+
+std::queue<RenderRequest> requests;
+std::mutex request_mutex;
+void render_thread();
 
 void render_init(NoiseGenerator *g)
 {
@@ -61,7 +79,24 @@ void render_init(NoiseGenerator *g)
     // color_stops.push_back(ColorStop{0.75, {0, 255, 0}});
     // color_stops.push_back(ColorStop{0.75, {128, 128, 128}});
     // color_stops.push_back(ColorStop{1, {128, 128, 128}});
+
+    ungenerated = IMG_Load("ungenerated.png");
+    ungenerated = SDL_ConvertSurfaceFormat(ungenerated, SDL_PIXELFORMAT_RGBA8888, 0);
+    if (ungenerated == nullptr) {
+        printf("Failed to load ungenerated.png: %s\n", SDL_GetError());
+    }
+
+    threads.push_back(std::thread(render_thread));
+    threads.push_back(std::thread(render_thread));
+    threads.push_back(std::thread(render_thread));
+    threads.push_back(std::thread(render_thread));
+    threads.push_back(std::thread(render_thread));
+    threads.push_back(std::thread(render_thread));
+    threads.push_back(std::thread(render_thread));
+    threads.push_back(std::thread(render_thread));
 }
+
+
 
 /**
  * Returns a surface with a 32x32 pixel heightmap at left, top
@@ -70,9 +105,23 @@ SDL_Surface *get_chunk_surface(int left, int top, std::vector<ColorStop> stops)
 {
     if (tile_map.contains(cache_key(left, top)))
     {
-        return tile_cache[tile_map.at(cache_key(left, top))].surf;
+        try {
+            return tile_cache[tile_map.at(cache_key(left, top))].surf;
+        } catch (std::exception) {
+            return ungenerated;
+        }
+    } else {
+        if (requested.contains(cache_key(left, top))) return ungenerated;
+        request_mutex.lock();
+        cache_mutex.lock();
+        requests.emplace(RenderRequest{left, top});
+        requested.emplace(cache_key(left, top), true);
+        cache_mutex.unlock();
+        request_mutex.unlock();
+        return ungenerated;
     }
-
+}
+void render_chunk_surface(int left, int top, std::vector<ColorStop> stops) {
     SDL_Surface *surf = SDL_CreateRGBSurface(0, 32, 32, 32, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x00000000);
     for (int x = 0; x < 32; x++)
     {
@@ -87,14 +136,15 @@ SDL_Surface *get_chunk_surface(int left, int top, std::vector<ColorStop> stops)
         }
     }
 
+    cache_mutex.lock();
     current_index = (current_index + 1) % CACHE_SIZE;
     SDL_FreeSurface(tile_cache[current_index].surf);
+    requested.erase(cache_key(tile_cache[current_index].x, tile_cache[current_index].y));
     tile_map.erase(cache_key(tile_cache[current_index].x, tile_cache[current_index].y));
     tile_cache[current_index] = Tile{left, top, surf};
     tile_map.emplace(cache_key(left, top), current_index);
     ++allocations;
-
-    return surf;
+    cache_mutex.unlock();
 }
 
 SDL_Surface *get_chunk_surface(int left, int top)
@@ -104,6 +154,8 @@ SDL_Surface *get_chunk_surface(int left, int top)
 
 void drop_cache()
 {
+    cache_mutex.lock();
+    request_mutex.lock();
     for (int i = 0; i < CACHE_SIZE; i++)
     {
         SDL_FreeSurface(tile_cache[i].surf);
@@ -111,6 +163,10 @@ void drop_cache()
         tile_cache[i] = {0, 0, nullptr};
     }
     current_index = 0;
+    requested.clear();
+
+    cache_mutex.unlock();
+    request_mutex.unlock();
 }
 
 // https://stackoverflow.com/questions/3407012/rounding-up-to-the-nearest-multiple-of-a-number
@@ -124,6 +180,7 @@ std::string get_debug_text()
 {
     std::string result;
     result += "Cache size: " + std::to_string(tile_map.size()) + '\n';
+    result += "Queue size: " + std::to_string(requests.size()) + '\n';
     result += "Allocations: " + std::to_string(allocations) + '\n';
     result += "FPS: " + std::to_string((int)display_fps) + '\n';
 
@@ -180,4 +237,33 @@ void export_range(int left, int top, int width, int height, double scale)
     color_stops = temp_stops;
 
     printf("Done\n");
+}
+
+void render_thread() {
+    while (true) {
+        if (stopping) {
+            return;
+        }
+        if (!requests.empty()) {
+            request_mutex.lock();
+            if (requests.empty()) {
+                request_mutex.unlock();
+                continue;
+            }
+            auto request = requests.front();
+            requests.pop();
+            request_mutex.unlock();
+
+            render_chunk_surface(request.x, request.y, color_stops);
+        } else {
+            SDL_Delay(50); // don't use cpu while nothing is being rendered
+        }
+    }
+}
+
+void render_quit() {
+    stopping = true;
+    for (auto& t : threads) {
+        t.join();
+    }
 }

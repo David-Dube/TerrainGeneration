@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 
 CC = g++
-CPPFLAGS = -g -I./ -INoiseGenerators/ -INoiseGenerators/Biomes/ -std=c++20
-LINKER_FLAGS = -lSDL2 -lGL -lX11 -ldl -lpthread -lrt -lSDL2_ttf -lSDL2_image
+CPPFLAGS = -g -I./ -INoiseGenerators/ -INoiseGenerators/Biomes/ -std=c++20 -pthread
+LINKER_FLAGS = -lSDL2 -lGL -lX11 -ldl -lrt -lSDL2_ttf -lSDL2_image -lpthread
 SRCS=$(subst main.cpp,,$(wildcard *.cpp)) $(wildcard NoiseGenerators/*.cpp) $(wildcard NoiseGenerators/Biomes/*.cpp)
 OBJS=$(SRCS:.cpp=.o )
 

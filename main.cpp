@@ -121,6 +121,7 @@ int main(int argc, char *args[])
         display_fps = (display_fps * 9 + real_fps) / 10.0;
     }
 
+    render_quit();
     // Free up window
     SDL_DestroyWindow(window);
     // Shutdown SDL
